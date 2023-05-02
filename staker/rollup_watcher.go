@@ -204,11 +204,11 @@ func (r *RollupWatcher) LatestConfirmedCreationBlock(ctx context.Context) (uint6
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
-	latestConfirmedNode, err := r.GetNode(r.getCallOpts(ctx), latestConfirmed)
-	if err != nil {
-		return 0, errors.WithStack(err)
+	creation, err := r.getNodeCreationBlock(ctx, latestConfirmed)
+	if !creation.IsUint64() {
+		return 0, fmt.Errorf("node %v creation block %v is not a uint64", latestConfirmed, creation)
 	}
-	return latestConfirmedNode.CreatedAtBlock, nil
+	return creation.Uint64(), nil
 }
 
 func (r *RollupWatcher) LookupChallengedNode(ctx context.Context, address common.Address) (uint64, error) {
