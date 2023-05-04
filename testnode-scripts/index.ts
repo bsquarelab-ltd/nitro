@@ -15,11 +15,15 @@ import {
   sendRPCCommand,
 } from "./ethcommands";
 
+/*
+      l1url: { string: true, default: "ws://3.39.16.90:8645"},
+      l1url: { string: true, default: "ws://geth:8546"},
+*/
 async function main() {
   await Yargs(hideBin(process.argv))
     .options({
       redisUrl: { string: true, default: "redis://redis:6379" },
-      l1url: { string: true, default: "ws://geth:8546" },
+      l1url: { string: true, default: "ws://3.39.16.90:8645" },
       l2url: { string: true, default: "ws://sequencer:8548" },
     })
     .options(stressOptions)

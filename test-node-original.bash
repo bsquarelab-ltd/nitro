@@ -29,16 +29,12 @@ else
     force_init=false
 fi
 
-use_dev_build_image=true
-
 run=true
 force_build=false
 validate=false
 detach=false
-blockscout=true #blockscout=true , false on macos
+blockscout=true
 tokenbridge=true
-cleangeth=true
-livel1network=false
 consensusclient=false
 redundantsequencers=0
 dev_build=false
@@ -78,14 +74,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-tokenbridge)
             tokenbridge=false
-            shift
-            ;;
-        --with-livel1)
-            livel1network=true
-            shift
-            ;;
-        --no-cleangeth)
-            cleangeth=false
             shift
             ;;
         --no-run)
@@ -134,8 +122,6 @@ while [[ $# -gt 0 ]]; do
             echo --detach:          detach from nodes after running them
             echo --no-blockscout:   don\'t build or launch blockscout
             echo --no-tokenbridge:  don\'t build or launch tokenbridge
-            echo --no-gethclean:    don\'t initialize geth
-            echo --with-livel1:     with livel1network
             echo --no-run:          does not launch nodes \(usefull with build or init\)
             echo
             echo script rus inside a separate docker. For SCRIPT-ARGS, run $0 script --help
@@ -210,12 +196,8 @@ if $dev_build; then
     docker tag blockscout:latest blockscout-testnode
   fi
 else
-  if $use_dev_build_image; then
-    echo == Using dev build image
-  else 
-    docker pull $NITRO_NODE_VERSION
-    docker tag $NITRO_NODE_VERSION nitro-node-dev-testnode
-  fi
+  docker pull $NITRO_NODE_VERSION
+  docker tag $NITRO_NODE_VERSION nitro-node-dev-testnode
   if $blockscout; then
     docker pull $BLOCKSCOUT_VERSION
     docker tag $BLOCKSCOUT_VERSION blockscout-testnode
@@ -237,15 +219,9 @@ if $force_init; then
 
     echo == Generating l1 keys
     docker-compose run testnode-scripts write-accounts
-    if $livel1network; then
-      echo == with live network
-    else
-      if $cleangeth; then
-        docker-compose run --entrypoint sh geth -c "echo passphrase > /datadir/passphrase"
-        docker-compose run --entrypoint sh geth -c "chown -R 1000:1000 /keystore"
-        docker-compose run --entrypoint sh geth -c "chown -R 1000:1000 /config"
-      fi
-    fi
+    docker-compose run --entrypoint sh geth -c "echo passphrase > /datadir/passphrase"
+    docker-compose run --entrypoint sh geth -c "chown -R 1000:1000 /keystore"
+    docker-compose run --entrypoint sh geth -c "chown -R 1000:1000 /config"
 
     if $consensusclient; then
       echo == Writing configs
@@ -271,30 +247,18 @@ if $force_init; then
     fi
 
     echo == Funding validator and sequencer
-    if $livel1network; then
-      docker-compose run testnode-scripts send-l1 --ethamount 10 --to validator --wait
-      docker-compose run testnode-scripts send-l1 --ethamount 10 --to sequencer --wait
-    else
-      docker-compose run testnode-scripts send-l1 --ethamount 1000 --to validator --wait
-      docker-compose run testnode-scripts send-l1 --ethamount 1000 --to sequencer --wait
-    fi
+    docker-compose run testnode-scripts send-l1 --ethamount 1000 --to validator --wait
+    docker-compose run testnode-scripts send-l1 --ethamount 1000 --to sequencer --wait
+
     echo == create l1 traffic
-    if $livel1network; then
-      docker-compose run testnode-scripts send-l1 --ethamount 10 --to user_l1user --wait
-      #docker-compose run testnode-scripts send-l1 --ethamount 0.0001 --from user_l1user --to user_l1user_b --wait --delay 500 --times 500 > /dev/null &
-    else
-      docker-compose run testnode-scripts send-l1 --ethamount 1000 --to user_l1user --wait
-      docker-compose run testnode-scripts send-l1 --ethamount 0.0001 --from user_l1user --to user_l1user_b --wait --delay 500 --times 500 > /dev/null &
-    fi
+    docker-compose run testnode-scripts send-l1 --ethamount 1000 --to user_l1user --wait
+    docker-compose run testnode-scripts send-l1 --ethamount 0.0001 --from user_l1user --to user_l1user_b --wait --delay 500 --times 500 > /dev/null &
+
 
     echo == Deploying L2
     sequenceraddress=`docker-compose run testnode-scripts print-address --account sequencer | tail -n 1 | tr -d '\r\n'`
-    if $livel1network; then
-      echo == no deployment with l1network 
-      docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn ws://3.39.16.90:8645 --l1keystore /home/user/l1keystore --sequencerAddress $sequenceraddress --ownerAddress $sequenceraddress --l1DeployAccount $sequenceraddress --l1deployment /config/deployment.json --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid    
-    else
-      docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn ws://geth:8546 --l1keystore /home/user/l1keystore --sequencerAddress $sequenceraddress --ownerAddress $sequenceraddress --l1DeployAccount $sequenceraddress --l1deployment /config/deployment.json --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid
-    fi
+
+    docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn ws://geth:8546 --l1keystore /home/user/l1keystore --sequencerAddress $sequenceraddress --ownerAddress $sequenceraddress --l1DeployAccount $sequenceraddress --l1deployment /config/deployment.json --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid
 
     echo == Writing configs
     docker-compose run testnode-scripts write-config
@@ -304,12 +268,7 @@ if $force_init; then
 
     echo == Funding l2 funnel
     docker-compose up -d $INITIAL_SEQ_NODES
-
-    if $livel1network; then
-      docker-compose run testnode-scripts bridge-funds --ethamount 10 --wait
-    else
-      docker-compose run testnode-scripts bridge-funds --ethamount 100000 --wait
-    fi
+    docker-compose run testnode-scripts bridge-funds --ethamount 100000 --wait
 
     if $tokenbridge; then
         echo == Deploying token bridge
@@ -317,9 +276,6 @@ if $force_init; then
         docker-compose run --entrypoint sh testnode-tokenbridge -c "cat localNetwork.json"
         echo
     fi
-#else 
-#  echo == Initializing redis
-#  docker-compose run testnode-scripts redis-init --redundancy $redundantsequencers
 fi
 
 if $run; then

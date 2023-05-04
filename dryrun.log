@@ -1,0 +1,94 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/alwayswinner/Develops/R_L2ROLLUP_OPTIMISTIC/nitro'
+echo creating /Users/alwayswinner/Develops/R_L2ROLLUP_OPTIMISTIC/nitro/target/include/arbitrator.h
+mkdir -p `dirname target/include/arbitrator.h`
+cd arbitrator && cbindgen --config cbindgen.toml --crate prover --output ../target/include/arbitrator.h
+mkdir -p `dirname target/lib/libprover.a`
+cargo build --manifest-path arbitrator/Cargo.toml --release --lib -p prover 
+install arbitrator/target/release/libprover.a target/lib/libprover.a
+mkdir .make
+printf "%btesting cbrotli local build exists. If this step fails, run ./build-brotli.sh -l%b\n" "\e[38;5;161;1m" "\e[0;0m"
+test -f target/include/brotli/encode.h
+test -f target/include/brotli/decode.h
+test -f target/lib/libbrotlicommon-static.a
+test -f target/lib/libbrotlienc-static.a
+test -f target/lib/libbrotlidec-static.a
+touch .make/cbrotli-lib
+ 
+mkdir -p `dirname target/bin/jit`
+cargo build --manifest-path arbitrator/Cargo.toml --release --bin jit 
+install arbitrator/target/release/jit target/bin/jit
+ 
+yarn --cwd contracts install
+touch .make/yarndeps
+yarn --cwd contracts build
+touch .make/solidity
+mkdir -p solgen/go/
+go run solgen/gen.go
+touch .make/solgen
+golangci-lint run --fix
+yarn --cwd contracts solhint
+touch .make/lint
+printf "%bdone!%b\n" "\e[38;5;161;1m" "\e[0;0m"
+mkdir -p `dirname target/bin/prover`
+cargo build --manifest-path arbitrator/Cargo.toml --release --bin prover 
+install arbitrator/target/release/prover target/bin/prover
+mkdir -p target/machines/latest
+cargo build --manifest-path arbitrator/wasm-libraries/Cargo.toml --release --target wasm32-unknown-unknown --package wasi-stub
+install arbitrator/wasm-libraries/target/wasm32-unknown-unknown/release/wasi_stub.wasm target/machines/latest/wasi_stub.wasm
+mkdir -p target/machines/latest
+cargo build --manifest-path arbitrator/wasm-libraries/Cargo.toml --release --target wasm32-wasi --package host-io
+install arbitrator/wasm-libraries/target/wasm32-wasi/release/host_io.wasm target/machines/latest/host_io.wasm
+clang arbitrator/wasm-libraries/soft-float/bindings32.c --sysroot /opt/wasi-sdk/wasi-sysroot -I arbitrator/wasm-libraries/soft-float/SoftFloat/source/include -target wasm32-wasi -Wconversion -c -o arbitrator/wasm-libraries/soft-float/bindings32.o
+clang arbitrator/wasm-libraries/soft-float/bindings64.c --sysroot /opt/wasi-sdk/wasi-sysroot -I arbitrator/wasm-libraries/soft-float/SoftFloat/source/include -target wasm32-wasi -Wconversion -c -o arbitrator/wasm-libraries/soft-float/bindings64.o
+ 
+cd arbitrator/wasm-libraries/soft-float/SoftFloat/build/Wasm-Clang && make wnkB
+mkdir -p target/machines/latest
+wasm-ld \
+		arbitrator/wasm-libraries/soft-float/bindings32.o \
+		arbitrator/wasm-libraries/soft-float/bindings64.o \
+		arbitrator/wasm-libraries/soft-float/SoftFloat/build/Wasm-Clang/*.o \
+		--no-entry -o target/machines/latest/soft-float.wasm \
+		--export wavm__f32_abs --export wavm__f32_neg --export wavm__f32_ceil --export wavm__f32_floor --export wavm__f32_trunc --export wavm__f32_nearest --export wavm__f32_sqrt --export wavm__f32_add --export wavm__f32_sub --export wavm__f32_mul --export wavm__f32_div --export wavm__f32_min --export wavm__f32_max \
+		--export wavm__f32_copysign --export wavm__f32_eq --export wavm__f32_ne --export wavm__f32_lt --export wavm__f32_le --export wavm__f32_gt --export wavm__f32_ge \
+		--export wavm__f64_abs --export wavm__f64_neg --export wavm__f64_ceil --export wavm__f64_floor --export wavm__f64_trunc --export wavm__f64_nearest --export wavm__f64_sqrt --export wavm__f64_add --export wavm__f64_sub --export wavm__f64_mul --export wavm__f64_div --export wavm__f64_min --export wavm__f64_max \
+		--export wavm__f64_copysign --export wavm__f64_eq --export wavm__f64_ne --export wavm__f64_lt --export wavm__f64_le --export wavm__f64_gt --export wavm__f64_ge \
+		--export wavm__i32_trunc_f32_s --export wavm__i32_trunc_f32_u --export wavm__i32_trunc_f64_s --export wavm__i32_trunc_f64_u \
+		--export wavm__i32_trunc_sat_f32_s --export wavm__i32_trunc_sat_f32_u --export wavm__i32_trunc_sat_f64_s --export wavm__i32_trunc_sat_f64_u \
+		--export wavm__i64_trunc_f32_s --export wavm__i64_trunc_f32_u --export wavm__i64_trunc_f64_s --export wavm__i64_trunc_f64_u \
+		--export wavm__i64_trunc_sat_f32_s --export wavm__i64_trunc_sat_f32_u --export wavm__i64_trunc_sat_f64_s --export wavm__i64_trunc_sat_f64_u \
+		--export wavm__f32_convert_i32_s --export wavm__f32_convert_i32_u --export wavm__f32_convert_i64_s --export wavm__f32_convert_i64_u \
+		--export wavm__f64_convert_i32_s --export wavm__f64_convert_i32_u --export wavm__f64_convert_i64_s --export wavm__f64_convert_i64_u \
+		--export wavm__f32_demote_f64 \
+		--export wavm__f64_promote_f32
+mkdir -p target/machines/latest
+cargo build --manifest-path arbitrator/wasm-libraries/Cargo.toml --release --target wasm32-wasi --package go-stub
+install arbitrator/wasm-libraries/target/wasm32-wasi/release/go_stub.wasm target/machines/latest/go_stub.wasm
+printf "%btesting cbrotli wasm build exists. If this step fails, run ./build-brotli.sh -w%b\n" "\e[38;5;161;1m" "\e[0;0m"
+test -f target/lib-wasm/libbrotlicommon-static.a
+test -f target/lib-wasm/libbrotlienc-static.a
+test -f target/lib-wasm/libbrotlidec-static.a
+touch .make/cbrotli-wasm
+mkdir -p target/machines/latest
+cargo build --manifest-path arbitrator/wasm-libraries/Cargo.toml --release --target wasm32-wasi --package brotli
+install arbitrator/wasm-libraries/target/wasm32-wasi/release/brotli.wasm target/machines/latest/brotli.wasm
+mkdir -p `dirname target/machines/latest/replay.wasm`
+GOOS=js GOARCH=wasm go build -o target/tmp/replay.wasm ./cmd/replay/...
+if ! diff -qN target/tmp/replay.wasm target/machines/latest/replay.wasm > /dev/null; then cp target/tmp/replay.wasm target/machines/latest/replay.wasm; fi
+target/bin/prover target/machines/latest/replay.wasm --generate-binaries target/machines/latest -l target/machines/latest/soft-float.wasm -l target/machines/latest/wasi_stub.wasm -l target/machines/latest/go_stub.wasm -l target/machines/latest/host_io.wasm -l target/machines/latest/brotli.wasm
+wat2wasm arbitrator/prover/test-cases/global-state.wat -o arbitrator/prover/test-cases/global-state.wasm
+wat2wasm arbitrator/prover/test-cases/read-inboxmsg-10.wat -o arbitrator/prover/test-cases/read-inboxmsg-10.wasm
+wat2wasm arbitrator/prover/test-cases/global-state-wrapper.wat -o arbitrator/prover/test-cases/global-state-wrapper.wasm
+wat2wasm arbitrator/prover/test-cases/const.wat -o arbitrator/prover/test-cases/const.wasm
+gotestsum --format short-verbose
+touch .make/test-go
+printf "%bdone!%b\n" "\e[38;5;161;1m" "\e[0;0m"
+golangci-lint run --disable-all -E gofmt --fix
+cargo fmt --all --manifest-path arbitrator/Cargo.toml -- --check
+cargo fmt --all --manifest-path arbitrator/wasm-testsuite/Cargo.toml -- --check
+yarn --cwd contracts prettier:solidity
+touch .make/fmt
+printf "%bdone building %s%b\n" "\e[38;5;161;1m" $(expr $(echo lint test-go .make/fmt | wc -w) - 1) "\e[0;0m"
+printf "%bready for push!%b\n" "\e[38;5;161;1m" "\e[0;0m"
+make: Leaving directory `/Users/alwayswinner/Develops/R_L2ROLLUP_OPTIMISTIC/nitro'
+ 

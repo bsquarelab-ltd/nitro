@@ -29,3 +29,11 @@ yarn-error.log
 local/
 testdata
 system_tests/test-data/*
+volumes/config*
+volumes/consensus
+volumes/l1*
+volumes/poster*
+volumes/seqdata*
+volumes/unsafestaker-data
+volumes/validator-data
+volumes/postgres-data

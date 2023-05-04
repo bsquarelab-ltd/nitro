@@ -72,11 +72,15 @@ func InitializeArbosInDatabase(db ethdb.Database, initData statetransfer.InitDat
 		return root, nil
 	}
 
+	log.Info("InitializeArbosState started(eric)")
+
 	burner := burn.NewSystemBurner(nil, false)
 	arbosState, err := InitializeArbosState(statedb, burner, chainConfig)
 	if err != nil {
 		log.Crit("failed to open the ArbOS state", "error", err)
 	}
+
+	log.Info("addresss table import started(eric)")
 
 	addrTable := arbosState.AddressTable()
 	addrTableSize, err := addrTable.Size()

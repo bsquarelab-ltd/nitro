@@ -184,10 +184,14 @@ func InitializeArbosState(stateDB vm.StateDB, burner burn.Burner, chainConfig *p
 		return nil, ErrAlreadyInitialized
 	}
 
+	fmt.Printf("@eric InitializeArbosState() %s \n", chainConfig)
+
 	desiredArbosVersion := chainConfig.ArbitrumChainParams.InitialArbOSVersion
 	if desiredArbosVersion == 0 {
 		return nil, errors.New("cannot initialize to ArbOS version 0")
 	}
+
+	fmt.Printf("@eric desiredArbosVersion() %d \n", desiredArbosVersion)
 
 	// Solidity requires call targets have code, but precompiles don't.
 	// To work around this, we give precompiles fake code.
@@ -229,7 +233,10 @@ func InitializeArbosState(stateDB vm.StateDB, burner burn.Burner, chainConfig *p
 		return nil, err
 	}
 	if desiredArbosVersion > 1 {
-		err = aState.UpgradeArbosVersion(desiredArbosVersion, true, stateDB)
+		/* original
+		err = aState.UpgradeArbosVersionv10(desiredArbosVersion, true, stateDB)
+		*/
+		err = aState.UpgradeArbosVersionv10(desiredArbosVersion, true, stateDB, chainConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -281,6 +288,68 @@ func (state *ArbosState) UpgradeArbosVersion(upgradeTo uint64, firstTime bool, s
 			// no state changes needed
 		case 9:
 			ensure(state.l1PricingState.SetL1FeesAvailable(stateDB.GetBalance(l1pricing.L1PricerFundsPoolAddress)))
+		default:
+			return fmt.Errorf("unrecognized ArbOS version %v, %w", state.arbosVersion, ErrFatalNodeOutOfDate)
+		}
+		state.arbosVersion++
+	}
+
+	if firstTime && upgradeTo >= 6 {
+		state.Restrict(state.l1PricingState.SetPerBatchGasCost(l1pricing.InitialPerBatchGasCostV6))
+		state.Restrict(state.l1PricingState.SetEquilibrationUnits(l1pricing.InitialEquilibrationUnitsV6))
+		state.Restrict(state.l2PricingState.SetSpeedLimitPerSecond(l2pricing.InitialSpeedLimitPerSecondV6))
+		state.Restrict(state.l2PricingState.SetMaxPerBlockGasLimit(l2pricing.InitialPerBlockGasLimitV6))
+	}
+
+	state.Restrict(state.backingStorage.SetUint64ByUint64(uint64(versionOffset), state.arbosVersion))
+
+	return nil
+}
+
+func (state *ArbosState) UpgradeArbosVersionv10(upgradeTo uint64, firstTime bool, stateDB vm.StateDB, chainConfig *params.ChainConfig) error {
+	for state.arbosVersion < upgradeTo {
+		ensure := func(err error) {
+			if err != nil {
+				message := fmt.Sprintf(
+					"Failed to upgrade ArbOS version %v to version %v: %v",
+					state.arbosVersion, state.arbosVersion+1, err,
+				)
+				panic(message)
+			}
+		}
+
+		switch state.arbosVersion {
+		case 1:
+			ensure(state.l1PricingState.SetLastSurplus(common.Big0, 1))
+		case 2:
+			ensure(state.l1PricingState.SetPerBatchGasCost(0))
+			ensure(state.l1PricingState.SetAmortizedCostCapBips(math.MaxUint64))
+		case 3:
+			// no state changes needed
+		case 4:
+			// no state changes needed
+		case 5:
+			// no state changes needed
+		case 6:
+			// no state changes needed
+		case 7:
+			// no state changes needed
+		case 8:
+			// no state changes needed
+		case 9:
+			ensure(state.l1PricingState.SetL1FeesAvailable(stateDB.GetBalance(l1pricing.L1PricerFundsPoolAddress)))
+		case 10:
+		case 11:
+			if !chainConfig.DebugMode() {
+				// This upgrade isn't finalized so we only want to support it for testing
+				return fmt.Errorf(
+					"the chain is upgrading to unsupported ArbOS version %v, %w",
+					state.arbosVersion+1,
+					ErrFatalNodeOutOfDate,
+				)
+			}
+			// no state changes needed
+
 		default:
 			return fmt.Errorf("unrecognized ArbOS version %v, %w", state.arbosVersion, ErrFatalNodeOutOfDate)
 		}
