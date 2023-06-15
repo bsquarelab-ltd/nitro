@@ -109,6 +109,8 @@ interface ISequencerInbox is IDelayedMessageProvider {
     /// @notice the creation block is intended to still be available after a keyset is deleted
     function getKeysetCreationBlock(bytes32 ksHash) external view returns (uint256);
 
+    function getMaxDataSize() external view returns (uint256);
+
     // ---------- BatchPoster functions ----------
 
     function addSequencerL2BatchFromOrigin(

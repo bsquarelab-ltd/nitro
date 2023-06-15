@@ -54,7 +54,8 @@ func InboxReaderConfigAddOptions(prefix string, f *flag.FlagSet) {
 
 var DefaultInboxReaderConfig = InboxReaderConfig{
 	DelayBlocks:         0,
-	CheckDelay:          time.Minute,
+	// CheckDelay:          time.Minute,
+	CheckDelay:          time.Millisecond * 10,
 	HardReorg:           false,
 	MinBlocksToRead:     1,
 	DefaultBlocksToRead: 100,

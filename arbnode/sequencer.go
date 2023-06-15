@@ -77,37 +77,46 @@ type SequencerConfigFetcher func() *SequencerConfig
 
 var DefaultSequencerConfig = SequencerConfig{
 	Enable:                      false,
-	MaxBlockSpeed:               time.Millisecond * 100,
+	// MaxBlockSpeed:               time.Millisecond * 100,
+	MaxBlockSpeed:               time.Millisecond * 10,
 	MaxRevertGasReject:          params.TxGas + 10000,
 	MaxAcceptableTimestampDelta: time.Hour,
 	Forwarder:                   DefaultSequencerForwarderConfig,
-	QueueSize:                   1024,
+	QueueSize:                   110000,
+	// QueueSize:                   1024,
 	QueueTimeout:                time.Second * 12,
 	NonceCacheSize:              1024,
 	Dangerous:                   DefaultDangerousSequencerConfig,
-	// 95% of the default batch poster limit, leaving 5KB for headers and such
-	MaxTxDataSize:           95000,
-	NonceFailureCacheSize:   1024,
+	// 95% of the default batch poster limit, leaving 5KB for headers and such\
+	// MaxTxDataSize:           95000,
+	MaxTxDataSize:           2850000,
+	NonceFailureCacheSize:   11000,
+	// NonceFailureCacheSize:   1024,
 	NonceFailureCacheExpiry: time.Second,
 }
 
 var TestSequencerConfig = SequencerConfig{
 	Enable:                      true,
 	MaxBlockSpeed:               time.Millisecond * 10,
+	// MaxBlockSpeed:               time.Millisecond * 5,
 	MaxRevertGasReject:          params.TxGas + 10000,
 	MaxAcceptableTimestampDelta: time.Hour,
 	SenderWhitelist:             "",
 	Forwarder:                   DefaultTestForwarderConfig,
-	QueueSize:                   128,
+	// QueueSize:                   128,
+	QueueSize:                   11000,
 	QueueTimeout:                time.Second * 5,
 	NonceCacheSize:              4,
 	Dangerous:                   TestDangerousSequencerConfig,
 	MaxTxDataSize:               95000,
-	NonceFailureCacheSize:       1024,
+	// MaxTxDataSize:               950000,
+	NonceFailureCacheSize:   11000,
+	// NonceFailureCacheSize:       1024,
 	NonceFailureCacheExpiry:     time.Second,
 }
 
 func SequencerConfigAddOptions(prefix string, f *flag.FlagSet) {
+	fmt.Println("*** QueueSize: ", DefaultSequencerConfig.QueueSize)
 	f.Bool(prefix+".enable", DefaultSequencerConfig.Enable, "act and post to l1 as sequencer")
 	f.Duration(prefix+".max-block-speed", DefaultSequencerConfig.MaxBlockSpeed, "minimum delay between blocks (sets a maximum speed of block production)")
 	f.Uint64(prefix+".max-revert-gas-reject", DefaultSequencerConfig.MaxRevertGasReject, "maximum gas executed in a revert for the sequencer to reject the transaction instead of posting it (anti-DOS)")

@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -105,20 +106,27 @@ func BatchPosterConfigAddOptions(prefix string, f *flag.FlagSet) {
 var DefaultBatchPosterConfig = BatchPosterConfig{
 	Enable:                             false,
 	DisableDasFallbackStoreDataOnChain: false,
-	MaxBatchSize:                       100000,
-	BatchPollDelay:                     time.Second * 10,
-	PostingErrorDelay:                  time.Second * 10,
-	MaxBatchPostInterval:               time.Hour,
+	// MaxBatchSize:                       100000,
+	MaxBatchSize:                       3000000,
+	// BatchPollDelay:                     time.Second * 10,
+	// PostingErrorDelay:                  time.Second * 10,
+	BatchPollDelay:       							time.Millisecond * 10,
+	PostingErrorDelay:    							time.Millisecond * 10,
+	// MaxBatchPostInterval:               time.Hour,
+	MaxBatchPostInterval:               0,
+	// MaxBatchPostInterval:               time.Second * 5,
 	CompressionLevel:                   brotli.DefaultCompression,
 	DASRetentionPeriod:                 time.Hour * 24 * 15,
 	GasRefunderAddress:                 "",
-	ExtraBatchGas:                      50_000,
+	ExtraBatchGas:                      1_000_000,
+	// ExtraBatchGas:                      10_000_000,
 	DataPoster:                         dataposter.DefaultDataPosterConfig,
 }
 
 var TestBatchPosterConfig = BatchPosterConfig{
 	Enable:               true,
 	MaxBatchSize:         100000,
+	// MaxBatchSize:         1000000,
 	BatchPollDelay:       time.Millisecond * 10,
 	PostingErrorDelay:    time.Millisecond * 10,
 	MaxBatchPostInterval: 0,
@@ -480,11 +488,18 @@ func (b *BatchPoster) estimateGas(ctx context.Context, sequencerMessage []byte, 
 	if err != nil {
 		return 0, err
 	}
+
 	gas, err := b.l1Reader.Client().EstimateGas(ctx, ethereum.CallMsg{
 		From: b.dataPoster.From(),
 		To:   &b.seqInboxAddr,
 		Data: data,
 	})
+	// gas = uint64(30000000)
+	// fmt.Errorf("data: ", data)
+	// err = nil
+
+	log.Info("Estimate_gas results: ", gas)
+
 	if err != nil {
 		sequencerMessageHeader := sequencerMessage
 		if len(sequencerMessageHeader) > 33 {
@@ -613,8 +628,31 @@ func (b *BatchPoster) maybePostSequencerBatch(ctx context.Context) (bool, error)
 		"current delayed", b.building.segments.delayedMsg,
 		"total segments", len(b.building.segments.rawSegments),
 	)
+	err = writeToFile(batchPosition.NextSeqNum, batchPosition.MessageCount, b.building.msgCount)
+	if err != nil {
+		log.Error("error writing to file", "error", err)
+	}
+
+	log.Info("Wrote to file")
+
 	b.building = nil
 	return true, nil
+}
+
+func writeToFile(sequenceNr uint64, from, to arbutil.MessageIndex) error {
+	file, err := os.OpenFile("batchSizes.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.WriteString(fmt.Sprintf("Sequence/Batch Number: %d\n From Block: %d\n To Block: %d\n\n", sequenceNr, from, to))
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	return nil
 }
 
 func (b *BatchPoster) Start(ctxIn context.Context) {

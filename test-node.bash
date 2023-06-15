@@ -306,7 +306,7 @@ if $force_init; then
     docker-compose up -d $INITIAL_SEQ_NODES
 
     if $livel1network; then
-      docker-compose run testnode-scripts bridge-funds --ethamount 10 --wait
+      docker-compose run testnode-scripts bridge-funds --ethamount 100000 --wait
     else
       docker-compose run testnode-scripts bridge-funds --ethamount 100000 --wait
     fi
@@ -314,7 +314,7 @@ if $force_init; then
     if $tokenbridge; then
         echo == Deploying token bridge
         docker-compose run -e ARB_KEY=$devprivkey -e ETH_KEY=$devprivkey testnode-tokenbridge gen:network
-        docker-compose run --entrypoint sh testnode-tokenbridge -c "cat localNetwork.json"
+        docker-compose run --entrypoint sh testnode-tokenbridge -c "cat localNetwork.json" > ./localNetwork/localNetwork.json
         echo
     fi
 #else 

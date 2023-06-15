@@ -460,4 +460,8 @@ contract SequencerInbox is DelegateCallAware, GasRefundEnabled, ISequencerInbox 
         if (ksInfo.creationBlock == 0) revert NoSuchKeyset(ksHash);
         return uint256(ksInfo.creationBlock);
     }
+
+    function getMaxDataSize() external pure returns (uint256) {
+        return MAX_DATA_SIZE;
+    }
 }

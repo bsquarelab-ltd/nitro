@@ -292,13 +292,18 @@ func deployRollupCreator(ctx context.Context, l1Reader *headerreader.HeaderReade
 func GenerateRollupConfig(prod bool, wasmModuleRoot common.Hash, rollupOwner common.Address, chainId *big.Int, loserStakeEscrow common.Address) rollupgen.Config {
 	var confirmPeriod uint64
 	if prod {
-		confirmPeriod = 45818
+		fmt.Println("*** Prod ***")
+		// confirmPeriod = 45818
+		confirmPeriod = 10
 	} else {
+		fmt.Println("*** Not Prod ***")
 		confirmPeriod = 20
+		// confirmPeriod = 10
 	}
 	return rollupgen.Config{
 		ConfirmPeriodBlocks:      confirmPeriod,
 		ExtraChallengeTimeBlocks: 200,
+		// ExtraChallengeTimeBlocks: 10,
 		StakeToken:               common.Address{},
 		BaseStake:                big.NewInt(params.Ether),
 		WasmModuleRoot:           wasmModuleRoot,
