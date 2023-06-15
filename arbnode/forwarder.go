@@ -40,7 +40,7 @@ var DefaultNodeForwarderConfig = ForwarderConfig{
 var DefaultSequencerForwarderConfig = ForwarderConfig{
 	ConnectionTimeout:     30 * time.Second,
 	IdleConnectionTimeout: 60 * time.Second,
-	MaxIdleConnections:    100,
+	MaxIdleConnections:    3000, // SPEEDUP@ERIC origin code : 100,
 }
 
 func AddOptionsForNodeForwarderConfig(prefix string, f *flag.FlagSet) {

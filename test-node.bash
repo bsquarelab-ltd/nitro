@@ -143,6 +143,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+case "$OSTYPE" in 
+  darwin*) blockscout=false ;;
+esac
+
 if $force_init; then
   force_build=true
 fi
@@ -317,9 +321,9 @@ if $force_init; then
         docker-compose run --entrypoint sh testnode-tokenbridge -c "cat localNetwork.json"
         echo
     fi
-#else 
-#  echo == Initializing redis
-#  docker-compose run testnode-scripts redis-init --redundancy $redundantsequencers
+else 
+  echo == Initializing redis
+  docker-compose run testnode-scripts redis-init --redundancy $redundantsequencers
 fi
 
 if $run; then

@@ -74,13 +74,15 @@ const (
 const (
 	InitialInertia           = 10
 	InitialPerUnitReward     = 10
-	InitialPricePerUnitWei   = 50 * params.GWei
+	InitialPricePerUnitWei   = 100 * params.GWei // SPEEDUP@ERIC origin value : 50 * params.GWei
 	InitialPerBatchGasCostV6 = 100000
+	InitialPerBatchGasCostV7 = 100000 // SPEEDUP@ERIC related to l1 blockchain network
 )
 
 // one minute at 100000 bytes / sec
 var InitialEquilibrationUnitsV0 = arbmath.UintToBig(60 * params.TxDataNonZeroGasEIP2028 * 100000)
 var InitialEquilibrationUnitsV6 = arbmath.UintToBig(params.TxDataNonZeroGasEIP2028 * 10000000)
+var InitialEquilibrationUnitsV7 = arbmath.UintToBig(params.TxDataNonZeroGasEIP2028 * 50000000) // SPEEDUP@ERIC
 
 func InitializeL1PricingState(sto *storage.Storage, initialRewardsRecipient common.Address) error {
 	bptStorage := sto.OpenSubStorage(BatchPosterTableKey)

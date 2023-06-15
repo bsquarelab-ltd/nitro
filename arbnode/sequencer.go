@@ -77,18 +77,18 @@ type SequencerConfigFetcher func() *SequencerConfig
 
 var DefaultSequencerConfig = SequencerConfig{
 	Enable:                      false,
-	MaxBlockSpeed:               time.Millisecond * 100,
+	MaxBlockSpeed:               time.Millisecond * 100, // SPEEDUP@ERIC origin value :  time.Millisecond * 100,
 	MaxRevertGasReject:          params.TxGas + 10000,
 	MaxAcceptableTimestampDelta: time.Hour,
 	Forwarder:                   DefaultSequencerForwarderConfig,
-	QueueSize:                   1024,
+	QueueSize:                   1024 * 5, // SPEEDUP@ERIC origin code :  1024,
 	QueueTimeout:                time.Second * 12,
-	NonceCacheSize:              1024,
+	NonceCacheSize:              1024 * 5, // SPEEDUP@ERIC origin code : 1024,
 	Dangerous:                   DefaultDangerousSequencerConfig,
 	// 95% of the default batch poster limit, leaving 5KB for headers and such
 	MaxTxDataSize:           95000,
-	NonceFailureCacheSize:   1024,
-	NonceFailureCacheExpiry: time.Second,
+	NonceFailureCacheSize:   1024 * 5,    // SPEEDUP@ERIC origin code : 1024,
+	NonceFailureCacheExpiry: time.Second, // SPEEDUP@ERIC origin value : time.Second,
 }
 
 var TestSequencerConfig = SequencerConfig{

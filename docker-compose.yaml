@@ -83,6 +83,7 @@ services:
       - --mine
       - --miner.etherbase=0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E
       - --gcmode=archive
+      - --dev.gaslimit=23000000
 
   # Creates a genesis state for the beacon chain using a YAML configuration file and
   # a deterministic set of validators
@@ -305,8 +306,8 @@ services:
     build: testnode-tokenbridge/
     environment:
       - ARB_URL=http://sequencer:8547
-      - ETH_URL=http://3.39.16.90:8545/
-      #- ETH_URL=http://geth:8545/
+      - ETH_URL=http://geth:8545/
+      #- ETH_URL=http://3.39.16.90:8545/
     volumes:
       - "./volumes/sdk-data/localNetwork.json:/workspace/localNetwork.json"
       - "sdk-data:/workspace"

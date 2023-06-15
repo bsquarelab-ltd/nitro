@@ -11,10 +11,12 @@ import (
 )
 
 const InitialSpeedLimitPerSecondV0 = 1000000
-const InitialPerBlockGasLimitV0 uint64 = 20 * 1000000
+const InitialPerBlockGasLimitV0 uint64 = 80 * 1000000 // / SPEEDUP@ERIC origin value : 20 * 1000000
 const InitialSpeedLimitPerSecondV6 = 7000000
+const InitialSpeedLimitPerSecondV7 = 28000000 // SPEEDUP@ERIC
 const InitialPerBlockGasLimitV6 uint64 = 32 * 1000000
-const InitialMinimumBaseFeeWei = params.GWei / 10
+const InitialPerBlockGasLimitV7 uint64 = 128 * 1000000 // SPEEDUP@ERIC origin value : 32 * 1000000
+const InitialMinimumBaseFeeWei = params.GWei / 10      // SPEEDUP@ERIC origin value : params.GWei / 10
 const InitialBaseFeeWei = InitialMinimumBaseFeeWei
 const InitialGasPoolSeconds = 10 * 60
 const InitialRateEstimateInertia = 60
@@ -29,8 +31,16 @@ func (ps *L2PricingState) AddToGasPool(gas int64) error {
 	if err != nil {
 		return err
 	}
+	/*
+		backlogOld := backlog
+	*/
 	// pay off some of the backlog with the added gas, stopping at 0
 	backlog = arbmath.SaturatingUCast(arbmath.SaturatingSub(int64(backlog), gas))
+	/*
+		if backlog != backlogOld {
+			log.Info("SPEEDUP@ERIC AddToGasPool()", "backlog", backlog, "old", backlogOld)
+		}
+	*/
 	return ps.SetGasBacklog(backlog)
 }
 
@@ -48,5 +58,11 @@ func (ps *L2PricingState) UpdatePricingModel(l2BaseFee *big.Int, timePassed uint
 		exponentBips := arbmath.NaturalToBips(excess) / arbmath.Bips(inertia*speedLimit)
 		baseFee = arbmath.BigMulByBips(minBaseFee, arbmath.ApproxExpBasisPoints(exponentBips))
 	}
+	/*
+		baseFeeOld, _ := ps.BaseFeeWei()
+		if baseFeeOld.Uint64() != baseFee.Uint64() {
+			log.Info("SPEEDUP@ERIC UpdatePricingModel()", "basefee", baseFee, "old", baseFeeOld)
+		}
+	*/
 	_ = ps.SetBaseFeeWei(baseFee)
 }

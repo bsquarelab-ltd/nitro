@@ -37,3 +37,4 @@ volumes/seqdata*
 volumes/unsafestaker-data
 volumes/validator-data
 volumes/postgres-data
+*.log

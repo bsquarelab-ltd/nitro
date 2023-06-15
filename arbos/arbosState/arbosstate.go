@@ -184,14 +184,10 @@ func InitializeArbosState(stateDB vm.StateDB, burner burn.Burner, chainConfig *p
 		return nil, ErrAlreadyInitialized
 	}
 
-	fmt.Printf("@eric InitializeArbosState() %s \n", chainConfig)
-
 	desiredArbosVersion := chainConfig.ArbitrumChainParams.InitialArbOSVersion
 	if desiredArbosVersion == 0 {
 		return nil, errors.New("cannot initialize to ArbOS version 0")
 	}
-
-	fmt.Printf("@eric desiredArbosVersion() %d \n", desiredArbosVersion)
 
 	// Solidity requires call targets have code, but precompiles don't.
 	// To work around this, we give precompiles fake code.
@@ -357,10 +353,18 @@ func (state *ArbosState) UpgradeArbosVersionv10(upgradeTo uint64, firstTime bool
 	}
 
 	if firstTime && upgradeTo >= 6 {
+		/* SPEEDUP@ERIC --
 		state.Restrict(state.l1PricingState.SetPerBatchGasCost(l1pricing.InitialPerBatchGasCostV6))
 		state.Restrict(state.l1PricingState.SetEquilibrationUnits(l1pricing.InitialEquilibrationUnitsV6))
 		state.Restrict(state.l2PricingState.SetSpeedLimitPerSecond(l2pricing.InitialSpeedLimitPerSecondV6))
 		state.Restrict(state.l2PricingState.SetMaxPerBlockGasLimit(l2pricing.InitialPerBlockGasLimitV6))
+		*/
+		/* SPEEDUP@ERIC ++ */
+		fmt.Printf("New l1 and l2 pricing state SPEEDUP@ERIC. \n")
+		state.Restrict(state.l1PricingState.SetPerBatchGasCost(l1pricing.InitialPerBatchGasCostV7))
+		state.Restrict(state.l1PricingState.SetEquilibrationUnits(l1pricing.InitialEquilibrationUnitsV7))
+		state.Restrict(state.l2PricingState.SetSpeedLimitPerSecond(l2pricing.InitialSpeedLimitPerSecondV7))
+		state.Restrict(state.l2PricingState.SetMaxPerBlockGasLimit(l2pricing.InitialPerBlockGasLimitV7))
 	}
 
 	state.Restrict(state.backingStorage.SetUint64ByUint64(uint64(versionOffset), state.arbosVersion))

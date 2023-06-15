@@ -30,7 +30,7 @@ const (
 	backlogToleranceOffset
 )
 
-const GethBlockGasLimit = 1 << 50
+const GethBlockGasLimit = 1 << 63 // origin value : 1 << 50 SPEEDUP@ERIC
 
 func InitializeL2PricingState(sto *storage.Storage) error {
 	_ = sto.SetUint64ByUint64(speedLimitPerSecondOffset, InitialSpeedLimitPerSecondV0)

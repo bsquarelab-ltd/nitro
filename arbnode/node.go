@@ -296,6 +296,7 @@ func GenerateRollupConfig(prod bool, wasmModuleRoot common.Hash, rollupOwner com
 	} else {
 		confirmPeriod = 20
 	}
+
 	return rollupgen.Config{
 		ConfirmPeriodBlocks:      confirmPeriod,
 		ExtraChallengeTimeBlocks: 200,

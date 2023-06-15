@@ -105,14 +105,14 @@ func BatchPosterConfigAddOptions(prefix string, f *flag.FlagSet) {
 var DefaultBatchPosterConfig = BatchPosterConfig{
 	Enable:                             false,
 	DisableDasFallbackStoreDataOnChain: false,
-	MaxBatchSize:                       100000,
+	MaxBatchSize:                       100000, // SPEEDUP@ERIC origin value : 100000,
 	BatchPollDelay:                     time.Second * 10,
 	PostingErrorDelay:                  time.Second * 10,
 	MaxBatchPostInterval:               time.Hour,
 	CompressionLevel:                   brotli.DefaultCompression,
 	DASRetentionPeriod:                 time.Hour * 24 * 15,
 	GasRefunderAddress:                 "",
-	ExtraBatchGas:                      50_000,
+	ExtraBatchGas:                      50_000, // SPEEDUP@ERIC origin value : 50_000,
 	DataPoster:                         dataposter.DefaultDataPosterConfig,
 }
 
